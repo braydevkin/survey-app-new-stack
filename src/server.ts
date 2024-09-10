@@ -12,20 +12,25 @@ export const app = new Hono();
 
 const versionPrefix = "/v1";
 
-const client = new Pool({
+export const db_client = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
+
+await db_client
+  .connect()
+  .then(() => customLogger("Database connected sucessfully"))
+  .catch((err) => {
+    customLogger(err);
+    throw new Error(err);
+  });
 
 app.use(etag(), logger(customLogger));
 app.route(versionPrefix, book);
 app.route(versionPrefix, user);
 
-await client
-  .connect()
-  .then(() => customLogger("Database connected sucessfully"))
-  .catch((err) => customLogger(err));
-
-export const db = drizzle(client);
+app.get("/notfound", (c) => {
+  return c.notFound();
+});
 
 export default {
   port: 3333,
